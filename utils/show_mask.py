@@ -32,14 +32,14 @@ def show_binary_mask(ROOT , id , annotations , source_wsi , dataset):
 
     for idx in range(len(masks)):
         mask = masks[idx].numpy() * 255
-        print(mask.shape)
+        # print(mask.shape)
         mask = np.expand_dims(mask , axis = 2)
         mask = np.concatenate([mask, mask , mask] , axis = 2)
-        img = cv2.bitwise_xor(img , mask)
+        img = cv2.bitwise_or(img , mask)
         
         box = boxes[idx].numpy()
-        print(box)
-        cv2.rectangle(img, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])),(0,0,255), 1)
+        # print(box)
+        cv2.rectangle(img, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])),(0,0,255), 2)
     # cv2.imshow("origin" , img)
     cv2.imshow("xor" , img)
     # cv2.imshow("mask" , mask)

@@ -33,19 +33,24 @@ def show_model_pred(model , image_path , device , tfm , threshold=0.5):
     rel = model(img.unsqueeze(0).to(device))[0]      
 
     
-    masks = rel["masks"].to("cpu").detach()#.numpy()
-    boxes = rel["boxes"].to("cpu").detach()#.numpy()
+    masks = rel["masks"].to("cpu").detach().numpy()
+    boxes = rel["boxes"].to("cpu").detach().numpy()
     score = rel["scores"].to("cpu").detach().numpy()
 
     # img = np.ones((1331,2000,3) , dtype=np.uint8) * 255
+    show_coco_mask(image_path, masks , boxes , score , threshold)
+    # cv2.waitKey(0)
+
+def show_coco_mask(image_path , masks , boxes , score , threshold):
     img = cv2.imread(str(image_path))
-    # img = cv2.resize(img , (1000,665))
+    
+    print(len(masks))
     for idx in range(len(masks)):
-        print(f"{idx} : {score[idx]}")
+        # print(f"{idx} : {score[idx]}")
         if score[idx] < threshold:
             continue
 
-        mask = (masks[idx][0].numpy() * 255).astype(np.uint8)
+        mask = (masks[idx][0] * 255).astype(np.uint8)
         mask = np.expand_dims(mask , axis = 2)
         mask = np.concatenate([mask, mask , mask] , axis = 2)
         
@@ -53,12 +58,11 @@ def show_model_pred(model , image_path , device , tfm , threshold=0.5):
 
         
         
-        box = boxes[idx].numpy()
+        box = boxes[idx]
         # print(box)
         cv2.rectangle(img, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])),(0,0,255), 2)
 
     cv2.imshow("img" , img)
-    cv2.waitKey(0)
 
 if __name__ == "__main__":
     def get_model_instance_segmentation(num_classes):
@@ -66,7 +70,7 @@ if __name__ == "__main__":
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
         in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-        hidden_layer = 256
+        hidden_layer = 1024
         model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                         hidden_layer,
                                                         num_classes)
@@ -82,7 +86,7 @@ if __name__ == "__main__":
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = get_model_instance_segmentation(2).to(device)
-    model.load_state_dict(torch.load(f"models/mask-rcnn-model_best.ckpt"))
+    model.load_state_dict(torch.load(f"models/mask-rcnn-model_best_1024.ckpt"))
     model.eval()
     tfm = transforms.Compose([
         transforms.ToTensor(),
