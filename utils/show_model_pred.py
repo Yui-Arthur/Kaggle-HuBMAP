@@ -62,7 +62,7 @@ def show_coco_mask(image_path , masks , boxes , score , threshold):
         # print(box)
         cv2.rectangle(img, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])),(0,0,255), 2)
 
-    cv2.imshow("img" , img)
+    cv2.imshow("model_pred" , img)
 
 if __name__ == "__main__":
     def get_model_instance_segmentation(num_classes):
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
         in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-        hidden_layer = 1024
+        hidden_layer = 256
         model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                         hidden_layer,
                                                         num_classes)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = get_model_instance_segmentation(2).to(device)
-    model.load_state_dict(torch.load(f"models/mask-rcnn-model_best_1024.ckpt"))
+    model.load_state_dict(torch.load(f"models/mask-rcnn-model_best.ckpt"))
     model.eval()
     tfm = transforms.Compose([
         transforms.ToTensor(),
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         print(file.stem)
         # print(labels[labels['id'] == file.stem]['annotations'].values[0])
         if file.stem in id_list:
-            show_model_pred(model , file ,device , tfm , 0.3)
+            show_model_pred(model , file ,device , tfm , 0.5)
             show_binary_mask(ROOT , file.stem , labels[labels['id'] == file.stem]['annotations'].values[0] , 0 , 0)
     # img = Image.open("test.jpg")
 

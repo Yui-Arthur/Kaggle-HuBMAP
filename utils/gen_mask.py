@@ -44,6 +44,13 @@ def get_valid_data(labels):
     
     return valid_data
 
+def get_testing_data(metadata):
+    # testing_data = []
+    # for idx , data in metadata.iterrows():
+    #     data['source_wsi'] <=  
+    # return valid_data
+    pass
+    
 
 def gen_KidneyDataset(name , labels , metadata , image_list):
         
@@ -88,8 +95,18 @@ if __name__ == '__main__':
     train_list = image_list[:int(len(image_list)*train_valid_ratio)]    
     valid_list = image_list[int(len(image_list)*train_valid_ratio):]
 
-    gen_KidneyDataset(f"{train_valid_ratio}_train" , labels , metadata , train_list)
-    gen_KidneyDataset(f"{1-train_valid_ratio}_valid" , labels , metadata , valid_list)
+    print(image_list[0])
+    
+    num = 0
+
+    for i in (image_folder).glob('*.tif'):
+        if metadata[metadata['id'] == i.stem]['source_wsi'].values[0] == 3 and i.stem not in id_list:
+            num += 1
+    
+    print(num)
+    # print(str(ROOT / "train" / f"003504460b3a.tif") in image_list)
+    # gen_KidneyDataset(f"{train_valid_ratio}_train" , labels , metadata , train_list)
+    # gen_KidneyDataset(f"{1-train_valid_ratio}_valid" , labels , metadata , valid_list)
 
     # print(id_list)
     # for i in range(len(labels)):
