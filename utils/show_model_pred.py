@@ -24,7 +24,7 @@ import cv2
 
 from gen_mask import get_valid_data
 from show_mask import show_binary_mask
-
+from ultralytics import YOLO
 
 
 def show_model_pred(model , image_path , device , tfm , threshold=0.5):
@@ -41,6 +41,20 @@ def show_model_pred(model , image_path , device , tfm , threshold=0.5):
     show_coco_mask(image_path, masks , boxes , score , threshold)
     # cv2.waitKey(0)
 
+def show_yolo_model_pred(model , image_path , threshold=0.5):
+
+    im2 = cv2.imread(str(image_path)) 
+    results = model.predict(source=im2)  # save predictions as labels
+
+    # print(results[0].masks)
+    masks = results[0].masks.data.to('cpu').detach().numpy()
+    boxes = results[0].boxes.xyxy.to('cpu').detach().numpy()
+    score = results[0].boxes.conf.to('cpu').detach().numpy()
+    masks= np.expand_dims(masks, axis=1)
+
+    show_coco_mask(image_path, masks , boxes , score , threshold)
+
+
 def show_coco_mask(image_path , masks , boxes , score , threshold):
     img = cv2.imread(str(image_path))
     
@@ -49,7 +63,7 @@ def show_coco_mask(image_path , masks , boxes , score , threshold):
         # print(f"{idx} : {score[idx]}")
         if score[idx] < threshold:
             continue
-
+        print(masks[idx][0].shape)
         mask = (masks[idx][0] * 255).astype(np.uint8)
         mask = np.expand_dims(mask , axis = 2)
         mask = np.concatenate([mask, mask , mask] , axis = 2)
@@ -84,21 +98,24 @@ if __name__ == "__main__":
     matadata = pd.read_csv(ROOT / "tile_meta.csv")
     id_list = get_valid_data(labels)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = get_model_instance_segmentation(2).to(device)
-    model.load_state_dict(torch.load(f"models/mask-rcnn-model_best.ckpt"))
-    model.eval()
-    tfm = transforms.Compose([
-        transforms.ToTensor(),
-    ]) 
-    
+    # mask-rcnn
+    # device = "cuda" if torch.cuda.is_available() else "cpu"
+    # model = get_model_instance_segmentation(2).to(device)
+    # model.load_state_dict(torch.load(f"models/mask-rcnn-model_best.ckpt"))
+    # model.eval()
+    # tfm = transforms.Compose([
+    #     transforms.ToTensor(),
+    # ]) 
 
+    # yolo
+    model = YOLO("yolo_coco/runs/segment/train7/weights/best.pt")
 
     for file in (ROOT / "train").glob("*.tif"):
         print(file.stem)
         # print(labels[labels['id'] == file.stem]['annotations'].values[0])
         if file.stem in id_list:
-            show_model_pred(model , file ,device , tfm , 0.5)
+            # show_model_pred(model , file ,device , tfm , 0.5)
+            show_yolo_model_pred(model , file , threshold=0.5)
             show_binary_mask(ROOT , file.stem , labels[labels['id'] == file.stem]['annotations'].values[0] , 0 , 0)
     # img = Image.open("test.jpg")
 
