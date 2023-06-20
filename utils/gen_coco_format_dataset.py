@@ -4,8 +4,9 @@ import cv2
 import torch
 import numpy as np 
 import json
-from gen_mask import get_valid_data
+from gen_mask import get_valid_data , get_dataset_data
 import shutil
+import random
 
 def gen_label_file(filename , annotations):
 
@@ -57,16 +58,36 @@ if __name__ == '__main__':
     labels = pd.read_json(SRC_ROOT / "polygons.jsonl" , lines=True)
     metadata = pd.read_csv(SRC_ROOT / "tile_meta.csv")
     image_folder = SRC_ROOT  / "train"
-    id_list = get_valid_data(labels)
-
     train_valid_ratio = 0.9
-    image_list = [i for i  in (image_folder).glob('*.tif') if i.stem in id_list]
+    shuffle = False
+    dataset_no = [1,2]
+
+
+    id_list = []
+    for dataset in dataset_no:
+        data = get_dataset_data(labels , metadata , dataset)
+        random.shuffle(data)
+        id_list += data
+
+    if shuffle:
+        random.shuffle(id_list)
+
+    train_num = int(len(id_list)) * (train_valid_ratio)
+    valid_num = int(len(id_list) * (1 - train_valid_ratio))
+
+
+    image_list = [image_folder / f"{i}.tif" for i  in id_list]
+
+
+    
     train_list = image_list[:int(len(image_list)*train_valid_ratio)]    
     valid_list = image_list[int(len(image_list)*train_valid_ratio):]
 
     
+    dataset_name = "train_1_2_valid_1"
 
-    gen_yolo_format_data(SRC_ROOT / 'train' , DST_ROOT , labels , train_list , valid_list)
+
+    gen_yolo_format_data(SRC_ROOT / 'train' , DST_ROOT / dataset_name, labels , train_list , valid_list)
     
 
     # print(id_list)
